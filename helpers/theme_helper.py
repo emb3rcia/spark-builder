@@ -230,22 +230,31 @@ os.makedirs(config_path, exist_ok=True)  # create folder if it doesn't exist
 themes_file = os.path.join(config_path, "themes.json")
 themes_initialized = False
 
-#define initialize themes function
+
+#define initialize settings function
 def initializeThemes():
-    #try to open already created themes.json file
-    try:
+    #try to open already created settings.json file
+    if os.path.exists(themes_file):
         with open(themes_file, "r") as f:
-            theme_data = json.load(f)
-            f.close()
-    #if file not found, create one and write default settings to it
-    except FileNotFoundError:
-        with open(themes_file, "w+") as f:
-            json.dump(default_themes, f, indent=4)
-            f.close()
-        theme_data = default_themes
-        
-    themes_initialized = True
-    return theme_data
+            try:
+                themes_data = json.load(f)
+            except json.JSONDecodeError:
+                themes_data = {}
+    else:
+        themes_data = {}
+
+    #ensure all default themes exist if missing
+    for name, theme in default_themes.items():
+        if name not in themes_data:
+            themes_data[name] = theme
+
+    #save updated themes file without truncating custom themes
+    tmp_file = themes_file + ".tmp"
+    with open(tmp_file, "w") as f:
+        json.dump(themes_data, f, indent=4)
+    os.replace(tmp_file, themes_file)
+
+    return themes_data
 
 def listThemes():
     themes = []
